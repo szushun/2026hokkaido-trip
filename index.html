@@ -1,0 +1,1648 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>2026 北海道7日遊 | YOASOBI 札幌互動行程表</title>
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com/3.4.17"></script>
+  <!-- Firebase Compat SDK -->
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+  <!-- Leaflet CSS & JS -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            brand: {
+              50: '#f0f9ff',
+              100: '#e0f2fe',
+              500: '#0284c7',
+              600: '#0369a1',
+              700: '#075985',
+              900: '#0c4a6e',
+            }
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    .no-scrollbar::-webkit-scrollbar { display: none; }
+    .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+    #map { height: 100%; min-height: 220px; z-index: 10; }
+    .leaflet-popup-content-wrapper { border-radius: 0.75rem; font-family: inherit; }
+  </style>
+</head>
+<body class="bg-slate-50 text-slate-800 antialiased font-sans pb-16 min-h-screen flex flex-col">
+
+  <!-- Header -->
+  <header class="sticky top-0 z-30 bg-white/95 backdrop-blur-md border-b border-slate-200 shadow-sm">
+    <div class="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between">
+      <div class="flex items-center space-x-2">
+        <span class="p-2 bg-gradient-to-tr from-sky-500 to-indigo-600 rounded-xl text-white shadow-md shadow-sky-500/20">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+        </span>
+        <div>
+          <h1 class="text-base sm:text-lg font-bold text-slate-900 leading-tight">2026 北海道 7 天行程表</h1>
+          <p class="text-xs text-slate-500">YOASOBI 札幌公演・道央道南巡迴</p>
+        </div>
+      </div>
+      <div class="flex items-center space-x-2">
+        <div id="sync-status-badge" class="hidden sm:flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-medium bg-amber-50 text-amber-800 border border-amber-200">
+          <span class="w-2 h-2 rounded-full bg-amber-500 animate-pulse" id="sync-dot"></span>
+          <span id="sync-status-text">本地模式</span>
+        </div>
+        <button id="btn-toggle-map" class="px-2.5 py-1.5 text-xs font-medium rounded-lg border border-slate-200 bg-white text-slate-700 hover:bg-slate-100 flex items-center gap-1 transition">
+          <svg class="w-4 h-4 text-sky-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7"></path></svg>
+          <span id="map-toggle-text">收合地圖</span>
+        </button>
+        <button id="btn-backup-menu" class="px-2.5 py-1.5 text-xs font-medium rounded-lg border border-slate-200 bg-white text-slate-700 hover:bg-slate-100 flex items-center gap-1 transition">
+          <svg class="w-4 h-4 text-slate-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4"></path></svg>
+          <span>設定</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Day Navigation Bar (Mobile 1 Day per Page) -->
+    <div class="border-t border-slate-200/80 bg-slate-50/70">
+      <div class="max-w-6xl mx-auto px-2 py-2 overflow-x-auto no-scrollbar flex space-x-1.5" id="day-nav-container">
+        <!-- Rendered by JS -->
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Content Area -->
+  <main class="max-w-6xl mx-auto px-4 py-4 w-full flex-1">
+    
+    <!-- Top Summary Banner -->
+    <div id="day-overview-card" class="mb-4 bg-white rounded-2xl p-4 shadow-sm border border-slate-200/80">
+      <!-- Dynamic Day Title & Info -->
+    </div>
+
+    <!-- Split View on Desktop / Stacked on Mobile -->
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-5 items-start">
+      
+      <!-- Left: Interactive Map -->
+      <section id="map-section" class="lg:col-span-5 w-full bg-white rounded-2xl overflow-hidden shadow-sm border border-slate-200/80 sticky top-[125px] transition-all duration-300">
+        <div class="p-3 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
+          <div class="flex items-center gap-1.5">
+            <span class="w-2.5 h-2.5 rounded-full bg-sky-500 animate-pulse"></span>
+            <span class="text-xs font-semibold text-slate-700">當日行程點位圖</span>
+          </div>
+          <span class="text-[11px] text-slate-500" id="map-spots-count">0 個標記點</span>
+        </div>
+        <div class="h-64 sm:h-72 lg:h-[480px] w-full" id="map"></div>
+        <div class="p-2.5 text-center text-[11px] text-slate-500 bg-white border-t border-slate-100 flex items-center justify-center gap-3">
+          <span>💡 點選地圖標記可快速對齊行程卡片</span>
+          <button id="btn-fit-map" class="text-sky-600 hover:text-sky-700 font-medium">重設視角</button>
+        </div>
+      </section>
+
+      <!-- Right: Timeline Cards (The Day's Schedule) -->
+      <section class="lg:col-span-7 space-y-3 w-full">
+        <!-- Action Row -->
+        <div class="flex items-center justify-between pb-1">
+          <div class="flex items-center gap-2">
+            <h2 class="text-sm font-bold text-slate-800" id="current-day-title">本日行程清單</h2>
+            <span id="badge-completed-ratio" class="text-xs px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200/60 font-medium">0/0 完成</span>
+          </div>
+          <button id="btn-add-item" class="px-3 py-1.5 bg-sky-600 hover:bg-sky-700 active:bg-sky-800 text-white rounded-xl text-xs font-semibold shadow-sm shadow-sky-600/30 flex items-center gap-1 transition">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
+            <span>新增行程</span>
+          </button>
+        </div>
+
+        <!-- Schedule Items Container -->
+        <div id="timeline-container" class="space-y-3">
+          <!-- Rendered dynamically -->
+        </div>
+
+        <!-- Accommodation & Laundry Footer Info for the Day -->
+        <div id="day-footer-meta" class="mt-4 bg-sky-50/70 border border-sky-100 rounded-xl p-3.5 text-xs text-sky-950 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+          <!-- Dynamic -->
+        </div>
+      </section>
+    </div>
+  </main>
+
+  <!-- Edit / Add Modal -->
+  <div id="item-modal" class="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm hidden flex items-center justify-center p-4 overflow-y-auto">
+    <div class="bg-white rounded-2xl max-w-lg w-full p-5 shadow-2xl border border-slate-100 transform transition-all my-8">
+      <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+        <h3 id="modal-title" class="text-base font-bold text-slate-900">編輯行程</h3>
+        <button id="btn-modal-close" class="text-slate-400 hover:text-slate-600 p-1 rounded-lg">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+        </button>
+      </div>
+
+      <form id="item-form" class="mt-4 space-y-3.5 text-xs">
+        <input type="hidden" id="form-item-id">
+
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-slate-600 font-medium mb-1">開始時間</label>
+            <input type="text" id="form-time" placeholder="例如：08:41 或 15:30" class="w-full px-3 py-2 rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-sky-500">
+          </div>
+          <div>
+            <label class="block text-slate-600 font-medium mb-1">分類標籤</label>
+            <select id="form-category" class="w-full px-3 py-2 rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-sky-500 bg-white">
+              <option value="transit">🚆 交通轉乘</option>
+              <option value="sightseeing">🗼 景點觀光</option>
+              <option value="concert">🎤 演唱會/活動</option>
+              <option value="dining">🍜 美食餐廳</option>
+              <option value="shopping">🛍️ 購物商場</option>
+              <option value="hotel">🏨 飯店住宿</option>
+              <option value="other">📌 其他備註</option>
+            </select>
+          </div>
+        </div>
+
+        <div>
+          <label class="block text-slate-600 font-medium mb-1">行程標題 / 地點名稱 *</label>
+          <input type="text" id="form-title" required placeholder="例如：余市蒸溜所 或 札幌PARCO" class="w-full px-3 py-2 rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-sky-500">
+        </div>
+
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-slate-600 font-medium mb-1">費用 (日幣/台幣)</label>
+            <input type="text" id="form-cost" placeholder="例如：¥1,500 或 NT$300" class="w-full px-3 py-2 rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-sky-500">
+          </div>
+          <div>
+            <label class="block text-slate-600 font-medium mb-1">費用數值 (統計用日幣)</label>
+            <input type="number" id="form-cost-val" placeholder="例如：1500" class="w-full px-3 py-2 rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-sky-500">
+          </div>
+        </div>
+
+        <div>
+          <label class="block text-slate-600 font-medium mb-1">詳細說明 / 月台班次 / 取票注意事項</label>
+          <textarea id="form-details" rows="3" placeholder="例如：3番線搭車、Lawson 取票、印章設置於入口左側" class="w-full px-3 py-2 rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-sky-500"></textarea>
+        </div>
+
+        <!-- Coordinates for Map -->
+        <div class="bg-slate-50 p-3 rounded-xl border border-slate-200">
+          <label class="block text-slate-700 font-semibold mb-1">地圖座標 (緯度, 經度)</label>
+          <div class="grid grid-cols-2 gap-2">
+            <input type="number" step="0.0001" id="form-lat" placeholder="緯度 Lat (如: 43.058)" class="px-2.5 py-1.5 bg-white rounded-lg border border-slate-300">
+            <input type="number" step="0.0001" id="form-lng" placeholder="經度 Lng (如: 141.353)" class="px-2.5 py-1.5 bg-white rounded-lg border border-slate-300">
+          </div>
+          <p class="text-[11px] text-slate-400 mt-1">若填寫座標，該點將會在地圖上呈現互動標記點與連線。</p>
+        </div>
+
+        <div class="flex items-center justify-between pt-2 border-t border-slate-100">
+          <button type="button" id="btn-delete-item" class="text-rose-600 hover:text-rose-700 font-medium px-2 py-1 rounded">刪除此行程</button>
+          <div class="flex items-center gap-2">
+            <button type="button" id="btn-modal-cancel" class="px-4 py-2 border border-slate-300 rounded-xl text-slate-700 hover:bg-slate-100">取消</button>
+            <button type="submit" class="px-4 py-2 bg-sky-600 hover:bg-sky-700 text-white rounded-xl font-semibold shadow-sm">儲存</button>
+          </div>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Backup & Reset Modal -->
+  <div id="settings-modal" class="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm hidden flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl max-w-md w-full p-5 shadow-2xl border border-slate-100">
+      <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+        <h3 class="text-base font-bold text-slate-900">資料備份與工具</h3>
+        <button id="btn-settings-close" class="text-slate-400 hover:text-slate-600 p-1">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+        </button>
+      </div>
+
+      <div class="mt-4 space-y-4 text-xs">
+        <!-- Firebase Sync Section -->
+        <div class="p-3.5 bg-sky-50/80 rounded-xl border border-sky-200">
+          <div class="flex items-center justify-between mb-1.5">
+            <h4 class="font-bold text-sky-950 flex items-center gap-1.5">
+              <span>🔥 Firebase 雲端即時同步</span>
+            </h4>
+            <span id="firebase-state-badge" class="px-2 py-0.5 rounded text-[10px] font-semibold bg-slate-200 text-slate-700">未連線</span>
+          </div>
+          <p class="text-sky-800 text-[11px] mb-2.5 leading-relaxed">
+            填入 Firebase 資料庫網址後，電腦改完手機<strong>免重整瞬間同步</strong>，旅伴也能同時檢視。
+          </p>
+          <div class="space-y-2">
+            <div>
+              <label class="block text-slate-600 font-semibold mb-0.5">Firebase Database URL *</label>
+              <input type="text" id="firebase-db-url" placeholder="例如：https://my-trip-default-rtdb.asia-southeast1.firebasedatabase.app" class="w-full px-2.5 py-1.5 bg-white rounded-lg border border-slate-300 text-slate-800 focus:ring-2 focus:ring-sky-500 focus:outline-none">
+            </div>
+            <div>
+              <label class="block text-slate-600 font-semibold mb-0.5">行程房間代號 (Room ID)</label>
+              <input type="text" id="firebase-room-id" value="yoasobi_sapporo_2026" placeholder="例如：yoasobi2026" class="w-full px-2.5 py-1.5 bg-white rounded-lg border border-slate-300 text-slate-800 focus:ring-2 focus:ring-sky-500 focus:outline-none">
+            </div>
+            <div class="flex items-center gap-2 pt-1">
+              <button type="button" id="btn-connect-firebase" class="flex-1 py-1.5 bg-sky-600 hover:bg-sky-700 text-white rounded-lg font-semibold transition">連線並同步</button>
+              <button type="button" id="btn-disconnect-firebase" class="px-3 py-1.5 bg-white border border-slate-300 hover:bg-slate-100 text-slate-700 rounded-lg font-medium transition hidden">中斷連線</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="p-3 bg-slate-50 rounded-xl border border-slate-200">
+          <h4 class="font-bold text-slate-800 mb-1">匯出行程 JSON 備份檔</h4>
+          <p class="text-slate-500 mb-2">下載目前包含修改內容的完整資料，可發給同行旅伴或存於手機。</p>
+          <button id="btn-export-json" class="w-full py-2 bg-sky-600 hover:bg-sky-700 text-white rounded-lg font-medium transition">下載備份檔案 (.json)</button>
+        </div>
+
+        <div class="p-3 bg-slate-50 rounded-xl border border-slate-200">
+          <h4 class="font-bold text-slate-800 mb-1">匯入行程資料</h4>
+          <p class="text-slate-500 mb-2">上傳先前備份的 .json 檔以回復修改。</p>
+          <input type="file" id="file-import-json" accept=".json" class="block w-full text-slate-500 file:mr-2 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-medium file:bg-sky-50 file:text-sky-700 hover:file:bg-sky-100 cursor-pointer">
+        </div>
+
+        <div class="p-3 bg-rose-50 rounded-xl border border-rose-200">
+          <h4 class="font-bold text-rose-800 mb-1">重設為初始 PDF 行程</h4>
+          <p class="text-rose-600 mb-2">清除瀏覽器中的暫存修改，還原成最初的 7 天原始預排行程。</p>
+          <button id="btn-reset-default" class="w-full py-2 border border-rose-300 text-rose-700 bg-white hover:bg-rose-100 rounded-lg font-medium transition">還原原始行程資料</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast Notification -->
+  <div id="toast" class="fixed bottom-6 right-6 z-50 bg-slate-900 text-white px-4 py-2.5 rounded-xl shadow-xl text-xs font-medium transform transition-all duration-300 opacity-0 pointer-events-none translate-y-3 flex items-center gap-2">
+    <svg class="w-4 h-4 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+    <span id="toast-message">儲存成功</span>
+  </div>
+
+  <script>
+    // Initial 7 Days Dataset Extracted directly from PDF
+    const INITIAL_ITINERARY = [
+      {
+        day: 1,
+        date: "11月12日",
+        dayOfWeek: "星期四 (木)",
+        summary: "台灣出發 ✈️ 轉機名古屋抵達新千歲，夜宿機場飯店與溫泉",
+        weatherTip: "氣溫約 3°C~9°C，防風大衣、保暖圍巾必備",
+        hotel: "エアターミナルホテル (Air Terminal Hotel)",
+        hotelCoords: [42.7933, 141.6744],
+        laundry: "無洗衣安排",
+        items: [
+          {
+            id: "d1-1",
+            time: "08:00",
+            category: "transit",
+            title: "玉山銀行肯驛機場接送",
+            cost: "NT$300",
+            costVal: 0,
+            details: "預約專車前往桃園國際機場第一航廈",
+            lat: 25.0797,
+            lng: 121.2342,
+            completed: false
+          },
+          {
+            id: "d1-2",
+            time: "12:00 - 15:35",
+            category: "transit",
+            title: "國泰航空 CX530 (TPE T1 → NGO T1)",
+            cost: "-",
+            costVal: 0,
+            details: "桃園機場第一航廈出發，抵達名古屋中部國際機場第一航廈",
+            lat: 34.8584,
+            lng: 136.8053,
+            completed: false
+          },
+          {
+            id: "d1-3",
+            time: "17:15 - 18:55",
+            category: "transit",
+            title: "日本航空 JL3117 (NGO T1 → CTS 国内線)",
+            cost: "-",
+            costVal: 0,
+            details: "名古屋轉機抵達新千歲機場國內線航廈",
+            lat: 42.7933,
+            lng: 141.6744,
+            completed: false
+          },
+          {
+            id: "d1-4",
+            time: "19:00",
+            category: "hotel",
+            title: "チェックイン：エアターミナルホテル",
+            cost: "-",
+            costVal: 0,
+            details: "直接連通新千歲國內線航廈3F，入住放行李",
+            lat: 42.7933,
+            lng: 141.6744,
+            completed: false
+          },
+          {
+            id: "d1-5",
+            time: "21:00",
+            category: "sightseeing",
+            title: "新千歲空港溫泉 (入館料無料)",
+            cost: "無料",
+            costVal: 0,
+            details: "飯店房客免費使用，溫泉最後入場 22:45，享受露天風呂與檜木湯",
+            lat: 42.7930,
+            lng: 141.6730,
+            completed: false
+          }
+        ]
+      },
+      {
+        day: 2,
+        date: "11月13日",
+        dayOfWeek: "星期五 (金)",
+        summary: "前往札幌薄野住宿、取票、成吉思汗烤肉與市區潮流巡禮",
+        weatherTip: "氣溫約 2°C~8°C，早晚溫差大，地下街溫暖",
+        hotel: "コンフォートホテル札幌すすきの (Comfort Hotel Sapporo Susukino)",
+        hotelCoords: [43.0543, 141.3577],
+        laundry: "🧺 需洗衣服",
+        items: [
+          {
+            id: "d2-1",
+            time: "06:00 - 09:30",
+            category: "dining",
+            title: "無料朝食 (機場飯店早餐)",
+            cost: "無料",
+            costVal: 0,
+            details: "エアターミナルホテル朝食会場",
+            lat: 42.7933,
+            lng: 141.6744,
+            completed: false
+          },
+          {
+            id: "d2-2",
+            time: "11:00",
+            category: "hotel",
+            title: "チェックアウト エアターミナルホテル",
+            cost: "-",
+            costVal: 0,
+            details: "退房並前往國內線巴士候車處",
+            lat: 42.7933,
+            lng: 141.6744,
+            completed: false
+          },
+          {
+            id: "d2-3",
+            time: "13:42 - 14:48",
+            category: "transit",
+            title: "新千歲空港國內線ターミナル → 南3条すすきの",
+            cost: "¥1,500",
+            costVal: 1500,
+            details: "機場巴士 (乘車66分)，於南3条すすきの站下車",
+            lat: 43.0560,
+            lng: 141.3560,
+            completed: false
+          },
+          {
+            id: "d2-4",
+            time: "15:00",
+            category: "hotel",
+            title: "チェックイン：コンフォートホテル札幌すすきの",
+            cost: "-",
+            costVal: 0,
+            details: "★ 重要代辦：順道至 Lawson 超商領取演唱會票券",
+            lat: 43.0543,
+            lng: 141.3577,
+            completed: false
+          },
+          {
+            id: "d2-5",
+            time: "16:00",
+            category: "dining",
+            title: "成吉思汗烤羊肉：大黑屋 札幌3號店",
+            cost: "自費",
+            costVal: 3500,
+            details: "北海道必吃頂級生烤羊肉，建議提早前往或排隊取號",
+            lat: 43.0560,
+            lng: 141.3535,
+            completed: false
+          },
+          {
+            id: "d2-6",
+            time: "17:00",
+            category: "shopping",
+            title: "札幌 PARCO (鬼塚虎 / 吉伊卡哇 / Nagano)",
+            cost: "自費",
+            costVal: 0,
+            details: "1F Onitsuka Tiger & Potr | B2F ちいかわらんど (吉伊卡哇) | 7F ナガノマーケット (Nagano Market)",
+            lat: 43.0585,
+            lng: 141.3533,
+            completed: false
+          },
+          {
+            id: "d2-7",
+            time: "19:00",
+            category: "shopping",
+            title: "札幌地下街 (Aurora Town / Pole Town)",
+            cost: "-",
+            costVal: 0,
+            details: "避開寒風，沿地下街散策前往札幌車站",
+            lat: 43.0610,
+            lng: 141.3530,
+            completed: false
+          },
+          {
+            id: "d2-8",
+            time: "20:00 - 22:00",
+            category: "sightseeing",
+            title: "札幌駅 ＆ JR Tower 展望室 T38",
+            cost: "¥740",
+            costVal: 740,
+            details: "JRタワー展望室タワー・スリーエイト，俯瞰札幌百萬夜景與棋盤街道 (營業至22:00)",
+            lat: 43.0686,
+            lng: 141.3508,
+            completed: false
+          }
+        ]
+      },
+      {
+        day: 3,
+        date: "11月14日",
+        dayOfWeek: "星期六 (土)",
+        summary: "Workman 採購 ＆ YOASOBI 北海道公演首日 (大和巨蛋)",
+        weatherTip: "氣溫約 1°C~7°C，巨蛋散場時氣溫低，請準備發熱衣手套",
+        hotel: "コンフォートホテル札幌すすきの",
+        hotelCoords: [43.0543, 141.3577],
+        laundry: "🧺 需洗衣服",
+        items: [
+          {
+            id: "d3-1",
+            time: "06:30 - 09:30",
+            category: "dining",
+            title: "無料朝食",
+            cost: "無料",
+            costVal: 0,
+            details: "飯店免費活力早餐",
+            lat: 43.0543,
+            lng: 141.3577,
+            completed: false
+          },
+          {
+            id: "d3-2",
+            time: "07:30 - 08:30",
+            category: "transit",
+            title: "東豊線 豊水すすきの → 東区役所前 + 公車東19",
+            cost: "¥490",
+            costVal: 490,
+            details: "東豊線至東區役所前站4號出口，轉搭東19北光北口線至北19條東8丁目",
+            lat: 43.0805,
+            lng: 141.3645,
+            completed: false
+          },
+          {
+            id: "d3-3",
+            time: "08:30",
+            category: "shopping",
+            title: "ワークマンプラス (Workman Plus) 札幌美香保店",
+            cost: "自費",
+            costVal: 0,
+            details: "防風防水機能防寒裝備、雪靴採買",
+            lat: 43.0886,
+            lng: 141.3654,
+            completed: false
+          },
+          {
+            id: "d3-4",
+            time: "10:00",
+            category: "shopping",
+            title: "ワークマン女子 (Workman Girl) アリオ札幌店",
+            cost: "自費",
+            costVal: 0,
+            details: "位於 Ario Sapporo 購物中心，各項休閒機能女裝",
+            lat: 43.0722,
+            lng: 141.3725,
+            completed: false
+          },
+          {
+            id: "d3-5",
+            time: "13:00",
+            category: "transit",
+            title: "東豊線：豊水すすきの駅 → 福住駅",
+            cost: "¥250",
+            costVal: 250,
+            details: "前往大和房屋普雷米斯特巨蛋 (札幌巨蛋)",
+            lat: 43.0232,
+            lng: 141.4035,
+            completed: false
+          },
+          {
+            id: "d3-6",
+            time: "15:30",
+            category: "concert",
+            title: "★ YOASOBI 北海道公演 (Day 1 入場)",
+            cost: "門票已付",
+            costVal: 0,
+            details: "15:30 開場入場！現場感受超震撼雷射音效與合唱",
+            lat: 43.0151,
+            lng: 141.4098,
+            completed: false
+          },
+          {
+            id: "d3-7",
+            time: "21:00",
+            category: "transit",
+            title: "東豊線：福住駅 → 豊水すすきの駅",
+            cost: "¥250",
+            costVal: 250,
+            details: "散場搭車人潮眾多，耐心依序排隊搭地鐵返回薄野",
+            lat: 43.0543,
+            lng: 141.3577,
+            completed: false
+          }
+        ]
+      },
+      {
+        day: 4,
+        date: "11月15日",
+        dayOfWeek: "星期日 (日)",
+        summary: "彌彥神社祈福求御守 ＆ YOASOBI 公演次日 ＆ 札幌夜聖代",
+        weatherTip: "氣溫約 0°C~6°C，夜間寒冷",
+        hotel: "コンフォートホテル札幌すすきの",
+        hotelCoords: [43.0543, 141.3577],
+        laundry: "🧺 需洗衣服",
+        items: [
+          {
+            id: "d4-1",
+            time: "06:30 - 09:30",
+            category: "dining",
+            title: "無料朝食",
+            cost: "無料",
+            costVal: 0,
+            details: "飯店早餐供應",
+            lat: 43.0543,
+            lng: 141.3577,
+            completed: false
+          },
+          {
+            id: "d4-2",
+            time: "09:00",
+            category: "transit",
+            title: "南北線：すすきの駅 → 幌平橋駅 (1號出口)",
+            cost: "¥210",
+            costVal: 210,
+            details: "搭乘地下鐵南北線直達中島公園旁",
+            lat: 43.0427,
+            lng: 141.3552,
+            completed: false
+          },
+          {
+            id: "d4-3",
+            time: "10:00",
+            category: "sightseeing",
+            title: "彌彥神社 (中島公園旁)",
+            cost: "御守",
+            costVal: 1000,
+            details: "特色：お酒を飲む人のお守り (飲酒人守護符)、旅行安全守",
+            lat: 43.0427,
+            lng: 141.3552,
+            completed: false
+          },
+          {
+            id: "d4-4",
+            time: "13:00 - 14:00",
+            category: "transit",
+            title: "東豊線：豊水すすきの駅 → 福住駅",
+            cost: "¥250",
+            costVal: 250,
+            details: "前往巨蛋準備入場",
+            lat: 43.0232,
+            lng: 141.4035,
+            completed: false
+          },
+          {
+            id: "d4-5",
+            time: "14:30 - 15:00",
+            category: "concert",
+            title: "★ YOASOBI 北海道公演 (Day 2 入場)",
+            cost: "門票已付",
+            costVal: 0,
+            details: "14:30 開場入場！連看兩場沉浸感滿點",
+            lat: 43.0151,
+            lng: 141.4098,
+            completed: false
+          },
+          {
+            id: "d4-6",
+            time: "20:00",
+            category: "transit",
+            title: "東豊線：福住駅 → 豊水すすきの駅",
+            cost: "¥250",
+            costVal: 250,
+            details: "返回薄野市區",
+            lat: 43.0543,
+            lng: 141.3577,
+            completed: false
+          },
+          {
+            id: "d4-7",
+            time: "20:30",
+            category: "dining",
+            title: "夜パフェ専門店 パフェテリア パル (Parfaiteria PaL)",
+            cost: "¥2,000",
+            costVal: 2000,
+            details: "札幌經典「夜聖代」文化，精緻微醺大人系甜點收尾",
+            lat: 43.0558,
+            lng: 141.3540,
+            completed: false
+          }
+        ]
+      },
+      {
+        day: 5,
+        date: "11月16日",
+        dayOfWeek: "星期一 (月)",
+        summary: "余市威士忌酒廠品酩 ＆ 小樽運河浪漫散策",
+        weatherTip: "沿海風大體感溫度低，注意防風",
+        hotel: "コンフォートホテル札幌すすきの",
+        hotelCoords: [43.0543, 141.3577],
+        laundry: "🧺 需洗衣服",
+        items: [
+          {
+            id: "d5-1",
+            time: "06:30 - 08:00",
+            category: "dining",
+            title: "無料朝食",
+            cost: "無料",
+            costVal: 0,
+            details: "晨間早餐補充活力",
+            lat: 43.0543,
+            lng: 141.3577,
+            completed: false
+          },
+          {
+            id: "d5-2",
+            time: "08:41 - 10:00",
+            category: "transit",
+            title: "JR函館本線：札幌 → 小樽 → 余市",
+            cost: "¥1,380",
+            costVal: 1380,
+            details: "札幌08:41發(3番線) → 小樽09:29著；轉09:36發倶知安行 → 余市10:00著 (乘車共1h12m)",
+            lat: 43.1873,
+            lng: 140.7934,
+            completed: false
+          },
+          {
+            id: "d5-3",
+            time: "11:00",
+            category: "sightseeing",
+            title: "NIKKA 余市蒸溜所 (Yoichi Distillery)",
+            cost: "預約制",
+            costVal: 0,
+            details: "11:00 預約場次參觀，了解石炭直火蒸餾工藝與單一麥芽威士忌試飲",
+            lat: 43.1873,
+            lng: 140.7934,
+            completed: false
+          },
+          {
+            id: "d5-4",
+            time: "13:43 - 14:09",
+            category: "transit",
+            title: "JR函館本線：余市 → 小樽 (乘車26分)",
+            cost: "¥470",
+            costVal: 470,
+            details: "搭乘JR返回小樽 (備用班次: 15:02發→15:26著)",
+            lat: 43.1972,
+            lng: 140.9937,
+            completed: false
+          },
+          {
+            id: "d5-5",
+            time: "14:30 - 18:30",
+            category: "sightseeing",
+            title: "小樽散策 (運河倉庫、童話十字路口、北一硝子)",
+            cost: "自費",
+            costVal: 1500,
+            details: "漫步小樽運河、品嚐 LeTAO 雙層乳酪蛋糕與音樂盒堂",
+            lat: 43.1990,
+            lng: 141.0020,
+            completed: false
+          },
+          {
+            id: "d5-6",
+            time: "19:00",
+            category: "transit",
+            title: "JR快速：小樽 → 札幌",
+            cost: "¥750",
+            costVal: 750,
+            details: "JR快速 Airport 號約32分鐘返回札幌",
+            lat: 43.0686,
+            lng: 141.3508,
+            completed: false
+          }
+        ]
+      },
+      {
+        day: 6,
+        date: "11月17日",
+        dayOfWeek: "星期二 (火)",
+        summary: "國內線飛往函館 ✈️ 志苔館百名城印章 ＆ 八幡坂函館山夜景",
+        weatherTip: "函館山頂風極大且冰冷，必備厚外套、手套毛帽",
+        hotel: "コンフォートホテル函館 (Comfort Hotel Hakodate)",
+        hotelCoords: [41.7725, 140.7289],
+        laundry: "🧺 需洗衣服",
+        items: [
+          {
+            id: "d6-1",
+            time: "07:00",
+            category: "hotel",
+            title: "チェックアウト コンフォートホテル札幌すすきの",
+            cost: "-",
+            costVal: 0,
+            details: "退房出發搭乘巴士直達新千歲機場",
+            lat: 43.0543,
+            lng: 141.3577,
+            completed: false
+          },
+          {
+            id: "d6-2",
+            time: "07:18 - 08:35",
+            category: "transit",
+            title: "すすきの(南4西3 直行77) → 新千歲國內線",
+            cost: "¥1,500",
+            costVal: 1500,
+            details: "北都交通直行便 (另有07:29、07:44、07:54班次)",
+            lat: 42.7933,
+            lng: 141.6744,
+            completed: false
+          },
+          {
+            id: "d6-3",
+            time: "10:55 - 11:35",
+            category: "transit",
+            title: "全日空 ANA NH4853 (CTS → HKD 函館)",
+            cost: "¥10,270",
+            costVal: 10270,
+            details: "新千歲國內線飛往函館機場，飛行時間40分鐘",
+            lat: 41.7700,
+            lng: 140.8222,
+            completed: false
+          },
+          {
+            id: "d6-4",
+            time: "12:30",
+            category: "sightseeing",
+            title: "續日本100名城：志苔館 (編號101)",
+            cost: "無料",
+            costVal: 0,
+            details: "★ 蓋章重點：志苔館あずまや (24H 放置蓋章台)",
+            lat: 41.7589,
+            lng: 140.8358,
+            completed: false
+          },
+          {
+            id: "d6-5",
+            time: "14:00",
+            category: "sightseeing",
+            title: "函館五稜乃蔵㈱ (在地清酒釀造廠)",
+            cost: "自費",
+            costVal: 0,
+            details: "函館在地酒造參訪與地酒試飲",
+            lat: 41.9167,
+            lng: 140.9333,
+            completed: false
+          },
+          {
+            id: "d6-6",
+            time: "15:00",
+            category: "hotel",
+            title: "チェックイン：コンフォートホテル函館",
+            cost: "-",
+            costVal: 0,
+            details: "位於函館市電函館站前旁，寄放行李手續",
+            lat: 41.7725,
+            lng: 140.7289,
+            completed: false
+          },
+          {
+            id: "d6-7",
+            time: "16:00",
+            category: "sightseeing",
+            title: "八幡坂 ＆ 元町西洋建築群",
+            cost: "市電¥210",
+            costVal: 210,
+            details: "直通海景的浪漫絕景斜坡、舊函館區公會堂巡禮",
+            lat: 41.7644,
+            lng: 140.7130,
+            completed: false
+          },
+          {
+            id: "d6-8",
+            time: "17:00 - 19:00",
+            category: "sightseeing",
+            title: "函館山纜車 ＆ 百萬米其林三星夜景",
+            cost: "纜車往返¥1,800",
+            costVal: 1800,
+            details: "日落前登頂，欣賞兩側海灣雙弧線之美",
+            lat: 41.7592,
+            lng: 140.7042,
+            completed: false
+          }
+        ]
+      },
+      {
+        day: 7,
+        date: "11月18日",
+        dayOfWeek: "星期三 (水)",
+        summary: "五稜郭百年星形要塞蓋章 ＆ 星宇航空返台",
+        weatherTip: "氣溫約 2°C~8°C，午後前往機場返台",
+        hotel: "溫暖的家 HOME 🏠",
+        hotelCoords: [25.0797, 121.2342],
+        laundry: "返家洗滌",
+        items: [
+          {
+            id: "d7-1",
+            time: "06:30 - 08:00",
+            category: "dining",
+            title: "無料朝食",
+            cost: "無料",
+            costVal: 0,
+            details: "飯店自助早餐",
+            lat: 41.7725,
+            lng: 140.7289,
+            completed: false
+          },
+          {
+            id: "d7-2",
+            time: "08:00",
+            category: "hotel",
+            title: "チェックアウト コンフォートホテル函館",
+            cost: "-",
+            costVal: 0,
+            details: "行李寄放櫃台或出發五稜郭",
+            lat: 41.7725,
+            lng: 140.7289,
+            completed: false
+          },
+          {
+            id: "d7-3",
+            time: "09:00",
+            category: "sightseeing",
+            title: "日本100名城：五稜郭 (編號02)",
+            cost: "五稜郭塔¥1,000",
+            costVal: 1000,
+            details: "★ 蓋章重點：箱館奉行所付属建物「板庫（休憩所）」入口左側スタンプ台（屋外）",
+            lat: 41.7968,
+            lng: 140.7568,
+            completed: false
+          },
+          {
+            id: "d7-4",
+            time: "10:00",
+            category: "shopping",
+            title: "無印良品 シエスタハコダテ (SHARE STAR HAKODATE)",
+            cost: "自費",
+            costVal: 0,
+            details: "大型無印良品概念店，採買限定生活雜貨與伴手禮",
+            lat: 41.7905,
+            lng: 140.7523,
+            completed: false
+          },
+          {
+            id: "d7-5",
+            time: "15:20 - 15:40",
+            category: "transit",
+            title: "JR函館駅前 → 函館空港 (函館帝產巴士)",
+            cost: "¥700",
+            costVal: 700,
+            details: "直達函館空港國際線航廈",
+            lat: 41.7700,
+            lng: 140.8222,
+            completed: false
+          },
+          {
+            id: "d7-6",
+            time: "18:00 - 21:40",
+            category: "transit",
+            title: "星宇航空 JX861 (HKD → TPE 桃園一航)",
+            cost: "-",
+            costVal: 0,
+            details: "搭乘星宇航空返抵台灣，機上免稅品與精美餐點",
+            lat: 25.0797,
+            lng: 121.2342,
+            completed: false
+          },
+          {
+            id: "d7-7",
+            time: "22:30",
+            category: "transit",
+            title: "玉山銀行肯驛機場接送",
+            cost: "NT$300",
+            costVal: 0,
+            details: "返抵溫暖的家，結束精彩充實的北海道 YOASOBI 之旅！",
+            lat: 25.0330,
+            lng: 121.5654,
+            completed: false
+          }
+        ]
+      }
+    ];
+
+    // Category styling & icons
+    const CATEGORIES = {
+      transit: { label: "交通", color: "bg-blue-50 text-blue-700 border-blue-200", icon: "🚆" },
+      sightseeing: { label: "景點", color: "bg-amber-50 text-amber-700 border-amber-200", icon: "🗼" },
+      concert: { label: "活動/Live", color: "bg-pink-50 text-pink-700 border-pink-200", icon: "🎤" },
+      dining: { label: "美食", color: "bg-orange-50 text-orange-700 border-orange-200", icon: "🍜" },
+      shopping: { label: "購物", color: "bg-purple-50 text-purple-700 border-purple-200", icon: "🛍️" },
+      hotel: { label: "住宿", color: "bg-emerald-50 text-emerald-700 border-emerald-200", icon: "🏨" },
+      other: { label: "備註", color: "bg-slate-50 text-slate-700 border-slate-200", icon: "📌" }
+    };
+
+    // State Management
+    let itineraryData = [];
+    let currentDayIndex = 0;
+    let leafletMap = null;
+    let markersLayer = null;
+    let routePolyline = null;
+    let isMapVisible = true;
+
+    // Firebase & LocalStorage Keys
+    const STORAGE_KEY = "hokkaido_travel_2026_itinerary_v1";
+    const FIREBASE_CONFIG_KEY = "hokkaido_firebase_db_url_v1";
+    const FIREBASE_ROOM_KEY = "hokkaido_firebase_room_id_v1";
+    let firebaseDb = null;
+    let firebaseTripRef = null;
+    let isFirebaseConnected = false;
+
+    function loadState() {
+      try {
+        const saved = localStorage.getItem(STORAGE_KEY);
+        if (saved) {
+          itineraryData = JSON.parse(saved);
+        } else {
+          itineraryData = JSON.parse(JSON.stringify(INITIAL_ITINERARY));
+        }
+      } catch (e) {
+        console.warn("LocalStorage access failed, using default data.", e);
+        itineraryData = JSON.parse(JSON.stringify(INITIAL_ITINERARY));
+      }
+    }
+
+    function saveState() {
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(itineraryData));
+      } catch (e) {
+        console.warn("Failed to save to localStorage.", e);
+      }
+
+      if (isFirebaseConnected && firebaseTripRef) {
+        try {
+          firebaseTripRef.set(itineraryData).then(() => {
+            showToast("已同步至雲端 🔥");
+          }).catch((err) => {
+            console.error("Firebase write error:", err);
+            showToast("本地已儲存 (雲端同步失敗)");
+          });
+        } catch (err) {
+          console.warn("Firebase set exception:", err);
+          showToast("本地已儲存");
+        }
+      } else {
+        showToast("本地進度已自動儲存");
+      }
+    }
+
+    // Firebase Initialization & Sync
+    function initFirebaseSync() {
+      let savedUrl = "";
+      let savedRoom = "yoasobi_sapporo_2026";
+      try {
+        savedUrl = localStorage.getItem(FIREBASE_CONFIG_KEY) || "";
+        savedRoom = localStorage.getItem(FIREBASE_ROOM_KEY) || "yoasobi_sapporo_2026";
+      } catch (e) {}
+
+      document.getElementById("firebase-db-url").value = savedUrl;
+      document.getElementById("firebase-room-id").value = savedRoom;
+
+      if (savedUrl && typeof firebase !== "undefined") {
+        connectToFirebase(savedUrl, savedRoom, false);
+      } else {
+        updateSyncUI(false, "本地模式");
+      }
+    }
+
+    function connectToFirebase(dbUrl, roomId, userTriggered = true) {
+      dbUrl = dbUrl.trim();
+      roomId = (roomId || "yoasobi_sapporo_2026").trim();
+
+      if (!dbUrl) {
+        if (userTriggered) showToast("請輸入 Firebase Database URL");
+        return;
+      }
+
+      // 自動清理與標準化 Database URL (去除子路徑與結尾斜線，確保為根目錄)
+      try {
+        if (!/^https?:\/\//i.test(dbUrl)) {
+          dbUrl = "https://" + dbUrl;
+        }
+        const parsedUrl = new URL(dbUrl);
+        // Firebase 規定 databaseURL 只能是 root origin (例: https://xxx.firebaseio.com)
+        dbUrl = parsedUrl.origin;
+      } catch (e) {
+        console.error("無效的 URL 格式:", e);
+        if (userTriggered) showToast("請輸入有效的 Firebase 網址格式");
+        return;
+      }
+
+      try {
+        // 若已存在先前的監聽與 app，先清理舊連線
+        if (firebaseTripRef) {
+          try { firebaseTripRef.off(); } catch (e) {}
+        }
+        if (firebase.apps && firebase.apps.length > 0) {
+          firebase.apps.forEach(app => {
+            try { app.delete(); } catch (e) {}
+          });
+        }
+
+        firebase.initializeApp({
+          databaseURL: dbUrl
+        });
+
+        firebaseDb = firebase.database();
+        firebaseTripRef = firebaseDb.ref("trips/" + roomId);
+
+        // Listen for live updates
+        firebaseTripRef.on("value", (snapshot) => {
+          const remoteData = snapshot.val();
+          if (remoteData && Array.isArray(remoteData) && remoteData.length > 0) {
+            itineraryData = remoteData;
+            try {
+              localStorage.setItem(STORAGE_KEY, JSON.stringify(itineraryData));
+            } catch (e) {}
+            renderApp();
+            updateSyncUI(true, "雲端已同步");
+            if (userTriggered) showToast("成功連線並取得雲端最新行程！");
+          } else {
+            // First time or empty database: upload current local itineraryData
+            firebaseTripRef.set(itineraryData);
+            updateSyncUI(true, "雲端已初始化");
+            if (userTriggered) showToast("已將目前行程上傳至雲端！");
+          }
+        }, (error) => {
+          console.error("Firebase listen failed:", error);
+          updateSyncUI(false, "權限或連線異常");
+          if (userTriggered) showToast("連線失敗，請檢查權限或網址");
+        });
+
+        isFirebaseConnected = true;
+        try {
+          localStorage.setItem(FIREBASE_CONFIG_KEY, dbUrl);
+          localStorage.setItem(FIREBASE_ROOM_KEY, roomId);
+        } catch (e) {}
+
+      } catch (err) {
+        console.error("Firebase setup error:", err);
+        updateSyncUI(false, "連線錯誤");
+        if (userTriggered) showToast("Firebase 連線失敗：" + (err.message || "格式錯誤"));
+      }
+    }
+
+    function disconnectFirebase() {
+      if (firebaseTripRef) {
+        try { firebaseTripRef.off(); } catch (e) {}
+      }
+      isFirebaseConnected = false;
+      firebaseTripRef = null;
+      try {
+        localStorage.removeItem(FIREBASE_CONFIG_KEY);
+      } catch (e) {}
+      updateSyncUI(false, "本地模式");
+      showToast("已切換回本地模式");
+    }
+
+    function updateSyncUI(connected, text) {
+      isFirebaseConnected = connected;
+      const badge = document.getElementById("sync-status-badge");
+      const dot = document.getElementById("sync-dot");
+      const statusText = document.getElementById("sync-status-text");
+      const stateBadge = document.getElementById("firebase-state-badge");
+      const disconnectBtn = document.getElementById("btn-disconnect-firebase");
+
+      if (connected) {
+        badge.className = "hidden sm:flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold bg-emerald-50 text-emerald-800 border border-emerald-200 shadow-sm";
+        dot.className = "w-2 h-2 rounded-full bg-emerald-500 animate-pulse";
+        statusText.textContent = text;
+        stateBadge.className = "px-2 py-0.5 rounded text-[10px] font-semibold bg-emerald-100 text-emerald-800";
+        stateBadge.textContent = "即時連線中";
+        disconnectBtn.classList.remove("hidden");
+      } else {
+        badge.className = "hidden sm:flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-medium bg-amber-50 text-amber-800 border border-amber-200";
+        dot.className = "w-2 h-2 rounded-full bg-amber-500";
+        statusText.textContent = text;
+        stateBadge.className = "px-2 py-0.5 rounded text-[10px] font-semibold bg-slate-200 text-slate-700";
+        stateBadge.textContent = "未連線";
+        disconnectBtn.classList.add("hidden");
+      }
+    }
+
+    function showToast(msg) {
+      const toast = document.getElementById("toast");
+      const msgEl = document.getElementById("toast-message");
+      msgEl.textContent = msg;
+      toast.classList.remove("opacity-0", "translate-y-3", "pointer-events-none");
+      setTimeout(() => {
+        toast.classList.add("opacity-0", "translate-y-3", "pointer-events-none");
+      }, 2500);
+    }
+
+    // Initialize Leaflet Map
+    function initMap() {
+      leafletMap = L.map('map', {
+        zoomControl: true,
+        attributionControl: false
+      }).setView([43.0686, 141.3508], 11);
+
+      // 使用 Esri 與 OpenStreetMap 共同維護的免費公開高清世界地圖 (完全免 API Key、免註冊，無 403 限制)
+      L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer/tile/{z}/{y}/{x}', {
+        maxZoom: 18
+      }).addTo(leafletMap);
+
+      markersLayer = L.layerGroup().addTo(leafletMap);
+    }
+
+    // Render Day Navigation Bar (1 Day per page/tab)
+    function renderDayNav() {
+      const nav = document.getElementById("day-nav-container");
+      nav.innerHTML = "";
+      itineraryData.forEach((dayData, index) => {
+        const btn = document.createElement("button");
+        const isActive = index === currentDayIndex;
+        btn.className = `flex-shrink-0 px-3.5 py-1.5 rounded-xl text-xs font-semibold transition-all flex flex-col items-center border ${
+          isActive 
+            ? 'bg-sky-600 text-white border-sky-600 shadow-md shadow-sky-600/30' 
+            : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-100 hover:text-slate-900'
+        }`;
+        btn.innerHTML = `
+          <span class="text-[11px] opacity-80 leading-tight">Day ${dayData.day}</span>
+          <span class="text-xs font-bold leading-tight">${dayData.date}</span>
+        `;
+        btn.addEventListener("click", () => {
+          currentDayIndex = index;
+          renderApp();
+        });
+        nav.appendChild(btn);
+      });
+    }
+
+    // Render Current Day Content
+    function renderApp() {
+      renderDayNav();
+      const currentDay = itineraryData[currentDayIndex];
+      if (!currentDay) return;
+
+      // 1. Overview Card
+      const overviewCard = document.getElementById("day-overview-card");
+      overviewCard.innerHTML = `
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-100 pb-3">
+          <div>
+            <div class="flex items-center gap-2">
+              <span class="px-2.5 py-0.5 rounded-lg bg-sky-100 text-sky-800 text-xs font-bold">Day ${currentDay.day}</span>
+              <h2 class="text-base sm:text-lg font-bold text-slate-900">${currentDay.date} ${currentDay.dayOfWeek}</h2>
+            </div>
+            <p class="text-xs text-slate-600 mt-1">${currentDay.summary}</p>
+          </div>
+          <div class="flex items-center gap-2 flex-wrap text-xs">
+            <span class="px-2.5 py-1 rounded-lg bg-amber-50 text-amber-800 border border-amber-200/60 flex items-center gap-1 font-medium">
+              🌤️ ${currentDay.weatherTip}
+            </span>
+          </div>
+        </div>
+        <div class="mt-2.5 flex flex-wrap items-center justify-between text-xs text-slate-500 gap-2 pt-1">
+          <div class="flex items-center gap-3">
+            <span>🏨 <strong>住宿：</strong>${currentDay.hotel}</span>
+            <span>🧺 <strong>洗衣：</strong>${currentDay.laundry}</span>
+          </div>
+          <div class="text-sky-700 font-semibold" id="day-cost-summary">
+            <!-- Calculated cost -->
+          </div>
+        </div>
+      `;
+
+      // 2. Timeline
+      document.getElementById("current-day-title").textContent = `Day ${currentDay.day} 行程時間軸 (${currentDay.items.length} 項)`;
+      const timelineContainer = document.getElementById("timeline-container");
+      timelineContainer.innerHTML = "";
+
+      let completedCount = 0;
+      let totalDayCostJPY = 0;
+
+      currentDay.items.forEach((item) => {
+        if (item.completed) completedCount++;
+        if (item.costVal) totalDayCostJPY += item.costVal;
+
+        const cat = CATEGORIES[item.category] || CATEGORIES.other;
+        const card = document.createElement("div");
+        card.id = `item-card-${item.id}`;
+        card.className = `p-3.5 bg-white rounded-2xl border transition-all hover:shadow-md ${
+          item.completed ? 'border-emerald-200 bg-emerald-50/20 opacity-80' : 'border-slate-200/90 shadow-sm'
+        }`;
+
+        // External Google Maps Search Query
+        const gmapQuery = encodeURIComponent(`${item.title} 日本北海道`);
+        const gmapUrl = `https://www.google.com/maps/search/?api=1&query=${gmapQuery}`;
+
+        card.innerHTML = `
+          <div class="flex items-start justify-between gap-2">
+            <div class="flex items-start gap-2.5">
+              <button class="mt-0.5 w-5 h-5 rounded-md border flex items-center justify-center transition ${
+                item.completed ? 'bg-emerald-500 border-emerald-500 text-white' : 'border-slate-300 hover:border-slate-400 bg-white'
+              }" data-toggle-check="${item.id}" title="標記完成">
+                ${item.completed ? '<svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"></path></svg>' : ''}
+              </button>
+              <div>
+                <div class="flex items-center gap-2 flex-wrap">
+                  <span class="text-xs font-bold text-slate-900">${item.time || '未定時'}</span>
+                  <span class="px-2 py-0.5 rounded-full text-[10px] font-semibold border ${cat.color}">${cat.icon} ${cat.label}</span>
+                  ${item.cost && item.cost !== '-' ? `<span class="px-2 py-0.5 rounded-full text-[10px] bg-slate-100 text-slate-700 font-medium">💰 ${item.cost}</span>` : ''}
+                </div>
+                <h3 class="text-sm font-bold text-slate-800 mt-1 cursor-pointer hover:text-sky-600 transition" data-locate="${item.id}">
+                  ${item.title}
+                </h3>
+              </div>
+            </div>
+            
+            <div class="flex items-center space-x-1 flex-shrink-0">
+              <a href="${gmapUrl}" target="_blank" rel="noopener noreferrer" class="p-1.5 text-slate-400 hover:text-sky-600 hover:bg-sky-50 rounded-lg transition" title="在 Google Maps 導航">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
+              </a>
+              <button class="p-1.5 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-lg transition" data-edit="${item.id}" title="編輯此行程">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg>
+              </button>
+            </div>
+          </div>
+
+          ${item.details ? `
+            <div class="mt-2.5 ml-7 text-xs text-slate-600 bg-slate-50/80 rounded-xl p-2.5 border border-slate-100 leading-relaxed">
+              ${item.details.replace(/\n/g, '<br>')}
+            </div>
+          ` : ''}
+        `;
+
+        timelineContainer.appendChild(card);
+      });
+
+      // Update Completion Badge
+      document.getElementById("badge-completed-ratio").textContent = `${completedCount}/${currentDay.items.length} 完成`;
+      
+      // Update Cost Summary
+      const costEl = document.getElementById("day-cost-summary");
+      if (costEl) {
+        costEl.textContent = `預估交通/門票花費：¥${totalDayCostJPY.toLocaleString()}`;
+      }
+
+      // Update Footer Meta
+      const footerMeta = document.getElementById("day-footer-meta");
+      footerMeta.innerHTML = `
+        <div class="flex items-center gap-2">
+          <span>今晚入住：<strong>${currentDay.hotel}</strong></span>
+          ${currentDay.hotelCoords ? `
+            <button class="text-sky-600 hover:underline font-medium" data-locate-hotel="true">查看地圖</button>
+          ` : ''}
+        </div>
+        <div>
+          <span>洗衣規劃：<strong>${currentDay.laundry}</strong></span>
+        </div>
+      `;
+
+      // 3. Update Map
+      updateMapMarkers(currentDay);
+    }
+
+    // Update Map with Day's Markers and Route Line
+    function updateMapMarkers(currentDay) {
+      if (!leafletMap || !markersLayer) return;
+
+      markersLayer.clearLayers();
+      if (routePolyline) {
+        leafletMap.removeLayer(routePolyline);
+        routePolyline = null;
+      }
+
+      const validCoords = [];
+      let markerIdx = 1;
+
+      currentDay.items.forEach((item) => {
+        if (item.lat && item.lng) {
+          validCoords.push([item.lat, item.lng]);
+
+          // Custom numbered circular marker
+          const customIcon = L.divIcon({
+            className: 'custom-map-pin',
+            html: `
+              <div class="w-6 h-6 rounded-full bg-sky-600 text-white font-bold text-xs flex items-center justify-center border-2 border-white shadow-md ring-2 ring-sky-500/30">
+                ${markerIdx}
+              </div>
+            `,
+            iconSize: [24, 24],
+            iconAnchor: [12, 12]
+          });
+
+          const marker = L.marker([item.lat, item.lng], { icon: customIcon });
+          marker.bindPopup(`
+            <div class="text-xs">
+              <strong class="text-slate-900 block text-sm">${item.title}</strong>
+              <span class="text-slate-500 block mt-0.5">時間：${item.time || '未排'}</span>
+              ${item.cost ? `<span class="text-sky-600 font-medium block">費用：${item.cost}</span>` : ''}
+              <button class="mt-2 text-sky-600 underline font-semibold" onclick="highlightTimelineCard('${item.id}')">查看卡片</button>
+            </div>
+          `);
+
+          markersLayer.addLayer(marker);
+          markerIdx++;
+        }
+      });
+
+      // Hotel Marker
+      if (currentDay.hotelCoords) {
+        const hotelIcon = L.divIcon({
+          className: 'custom-hotel-pin',
+          html: `
+            <div class="w-7 h-7 rounded-full bg-emerald-600 text-white font-bold text-xs flex items-center justify-center border-2 border-white shadow-lg ring-2 ring-emerald-500/30">
+              🏨
+            </div>
+          `,
+          iconSize: [28, 28],
+          iconAnchor: [14, 14]
+        });
+        const hotelMarker = L.marker(currentDay.hotelCoords, { icon: hotelIcon });
+        hotelMarker.bindPopup(`<strong class="text-xs">住宿：${currentDay.hotel}</strong>`);
+        markersLayer.addLayer(hotelMarker);
+        validCoords.push(currentDay.hotelCoords);
+      }
+
+      document.getElementById("map-spots-count").textContent = `${validCoords.length} 個標記點`;
+
+      if (validCoords.length > 0) {
+        // Draw route polyline
+        routePolyline = L.polyline(validCoords, {
+          color: '#0284c7',
+          weight: 3,
+          opacity: 0.6,
+          dashArray: '5, 8'
+        }).addTo(leafletMap);
+
+        leafletMap.fitBounds(L.latLngBounds(validCoords), { padding: [40, 40], maxZoom: 14 });
+      }
+    }
+
+    // Scroll and Highlight Timeline Card
+    window.highlightTimelineCard = function(itemId) {
+      const card = document.getElementById(`item-card-${itemId}`);
+      if (card) {
+        card.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        card.classList.add("ring-2", "ring-sky-500");
+        setTimeout(() => card.classList.remove("ring-2", "ring-sky-500"), 2000);
+      }
+    };
+
+    // Event Delegation for Card Actions
+    document.getElementById("timeline-container").addEventListener("click", (e) => {
+      // Toggle Completed Checkbox
+      const checkBtn = e.target.closest("[data-toggle-check]");
+      if (checkBtn) {
+        const id = checkBtn.getAttribute("data-toggle-check");
+        const currentDay = itineraryData[currentDayIndex];
+        const item = currentDay.items.find(i => i.id === id);
+        if (item) {
+          item.completed = !item.completed;
+          saveState();
+          renderApp();
+        }
+        return;
+      }
+
+      // Edit Button
+      const editBtn = e.target.closest("[data-edit]");
+      if (editBtn) {
+        const id = editBtn.getAttribute("data-edit");
+        openEditModal(id);
+        return;
+      }
+
+      // Locate on Map
+      const locateBtn = e.target.closest("[data-locate]");
+      if (locateBtn) {
+        const id = locateBtn.getAttribute("data-locate");
+        const currentDay = itineraryData[currentDayIndex];
+        const item = currentDay.items.find(i => i.id === id);
+        if (item && item.lat && item.lng && leafletMap) {
+          leafletMap.flyTo([item.lat, item.lng], 15, { duration: 1 });
+          if (!isMapVisible) toggleMap(true);
+        }
+      }
+    });
+
+    // Day Footer Locate Hotel
+    document.getElementById("day-footer-meta").addEventListener("click", (e) => {
+      if (e.target.closest("[data-locate-hotel]")) {
+        const currentDay = itineraryData[currentDayIndex];
+        if (currentDay.hotelCoords && leafletMap) {
+          leafletMap.flyTo(currentDay.hotelCoords, 15, { duration: 1 });
+          if (!isMapVisible) toggleMap(true);
+        }
+      }
+    });
+
+    // Add New Item Button
+    document.getElementById("btn-add-item").addEventListener("click", () => {
+      openAddModal();
+    });
+
+    // Modal Operations
+    const modal = document.getElementById("item-modal");
+    const itemForm = document.getElementById("item-form");
+
+    function openAddModal() {
+      document.getElementById("modal-title").textContent = `新增 Day ${itineraryData[currentDayIndex].day} 行程`;
+      document.getElementById("form-item-id").value = "";
+      document.getElementById("form-time").value = "";
+      document.getElementById("form-category").value = "sightseeing";
+      document.getElementById("form-title").value = "";
+      document.getElementById("form-cost").value = "";
+      document.getElementById("form-cost-val").value = "";
+      document.getElementById("form-details").value = "";
+      document.getElementById("form-lat").value = "";
+      document.getElementById("form-lng").value = "";
+      document.getElementById("btn-delete-item").classList.add("hidden");
+      modal.classList.remove("hidden");
+    }
+
+    function openEditModal(itemId) {
+      const currentDay = itineraryData[currentDayIndex];
+      const item = currentDay.items.find(i => i.id === itemId);
+      if (!item) return;
+
+      document.getElementById("modal-title").textContent = `編輯行程項目`;
+      document.getElementById("form-item-id").value = item.id;
+      document.getElementById("form-time").value = item.time || "";
+      document.getElementById("form-category").value = item.category || "other";
+      document.getElementById("form-title").value = item.title || "";
+      document.getElementById("form-cost").value = item.cost || "";
+      document.getElementById("form-cost-val").value = item.costVal || "";
+      document.getElementById("form-details").value = item.details || "";
+      document.getElementById("form-lat").value = item.lat || "";
+      document.getElementById("form-lng").value = item.lng || "";
+      document.getElementById("btn-delete-item").classList.remove("hidden");
+      modal.classList.remove("hidden");
+    }
+
+    function closeModal() {
+      modal.classList.add("hidden");
+    }
+
+    document.getElementById("btn-modal-close").addEventListener("click", closeModal);
+    document.getElementById("btn-modal-cancel").addEventListener("click", closeModal);
+
+    // Save Form (Add or Edit)
+    itemForm.addEventListener("submit", (e) => {
+      e.preventDefault();
+      const currentDay = itineraryData[currentDayIndex];
+      const itemId = document.getElementById("form-item-id").value;
+      const latVal = parseFloat(document.getElementById("form-lat").value);
+      const lngVal = parseFloat(document.getElementById("form-lng").value);
+
+      const newItemData = {
+        time: document.getElementById("form-time").value.trim(),
+        category: document.getElementById("form-category").value,
+        title: document.getElementById("form-title").value.trim(),
+        cost: document.getElementById("form-cost").value.trim(),
+        costVal: parseInt(document.getElementById("form-cost-val").value, 10) || 0,
+        details: document.getElementById("form-details").value.trim(),
+        lat: isNaN(latVal) ? null : latVal,
+        lng: isNaN(lngVal) ? null : lngVal
+      };
+
+      if (itemId) {
+        // Edit existing
+        const idx = currentDay.items.findIndex(i => i.id === itemId);
+        if (idx !== -1) {
+          currentDay.items[idx] = { ...currentDay.items[idx], ...newItemData };
+        }
+      } else {
+        // Add new
+        currentDay.items.push({
+          id: `item-${Date.now()}`,
+          completed: false,
+          ...newItemData
+        });
+      }
+
+      saveState();
+      closeModal();
+      renderApp();
+    });
+
+    // Delete Item
+    document.getElementById("btn-delete-item").addEventListener("click", () => {
+      const itemId = document.getElementById("form-item-id").value;
+      if (!itemId) return;
+      const currentDay = itineraryData[currentDayIndex];
+      currentDay.items = currentDay.items.filter(i => i.id !== itemId);
+      saveState();
+      closeModal();
+      renderApp();
+    });
+
+    // Settings & Backup Modal
+    const settingsModal = document.getElementById("settings-modal");
+    document.getElementById("btn-backup-menu").addEventListener("click", () => {
+      settingsModal.classList.remove("hidden");
+    });
+    document.getElementById("btn-settings-close").addEventListener("click", () => {
+      settingsModal.classList.add("hidden");
+    });
+
+    // Export JSON
+    document.getElementById("btn-export-json").addEventListener("click", () => {
+      const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(itineraryData, null, 2));
+      const downloadAnchor = document.createElement("a");
+      downloadAnchor.setAttribute("href", dataStr);
+      downloadAnchor.setAttribute("download", `hokkaido_yoasobi_itinerary_${Date.now()}.json`);
+      document.body.appendChild(downloadAnchor);
+      downloadAnchor.click();
+      downloadAnchor.remove();
+      showToast("已匯出 JSON 備份檔");
+    });
+
+    // Import JSON
+    document.getElementById("file-import-json").addEventListener("change", (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        try {
+          const imported = JSON.parse(event.target.result);
+          if (Array.isArray(imported) && imported.length > 0) {
+            itineraryData = imported;
+            saveState();
+            renderApp();
+            settingsModal.classList.add("hidden");
+            showToast("成功匯入行程資料！");
+          } else {
+            showToast("格式不正確");
+          }
+        } catch (err) {
+          showToast("解析失敗，非有效 JSON 檔");
+        }
+      };
+      reader.readAsText(file);
+    });
+
+    // Reset to Default
+    document.getElementById("btn-reset-default").addEventListener("click", () => {
+      itineraryData = JSON.parse(JSON.stringify(INITIAL_ITINERARY));
+      saveState();
+      renderApp();
+      settingsModal.classList.add("hidden");
+      showToast("已還原初始 7 天行程");
+    });
+
+    // Toggle Map Function
+    function toggleMap(forceShow = null) {
+      const mapSection = document.getElementById("map-section");
+      const toggleText = document.getElementById("map-toggle-text");
+      
+      if (forceShow !== null) {
+        isMapVisible = forceShow;
+      } else {
+        isMapVisible = !isMapVisible;
+      }
+
+      if (isMapVisible) {
+        mapSection.classList.remove("hidden");
+        toggleText.textContent = "收合地圖";
+        if (leafletMap) {
+          setTimeout(() => leafletMap.invalidateSize(), 300);
+        }
+      } else {
+        mapSection.classList.add("hidden");
+        toggleText.textContent = "展開地圖";
+      }
+    }
+
+    document.getElementById("btn-toggle-map").addEventListener("click", () => toggleMap());
+
+    // Fit Map Bounds Button
+    document.getElementById("btn-fit-map").addEventListener("click", () => {
+      const currentDay = itineraryData[currentDayIndex];
+      updateMapMarkers(currentDay);
+    });
+
+    // Firebase Button Handlers
+    document.getElementById("btn-connect-firebase").addEventListener("click", () => {
+      const dbUrl = document.getElementById("firebase-db-url").value;
+      const roomId = document.getElementById("firebase-room-id").value;
+      connectToFirebase(dbUrl, roomId, true);
+    });
+
+    document.getElementById("btn-disconnect-firebase").addEventListener("click", () => {
+      disconnectFirebase();
+    });
+
+    // Initialize App
+    window.addEventListener("DOMContentLoaded", () => {
+      loadState();
+      initMap();
+      renderApp();
+      initFirebaseSync();
+    });
+  </script>
+</body>
+</html>
