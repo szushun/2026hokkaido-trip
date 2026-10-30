@@ -142,6 +142,14 @@
       <form id="item-form" class="mt-4 space-y-3.5 text-xs">
         <input type="hidden" id="form-item-id">
 
+        <!-- 加入所屬日期選擇欄位 -->
+        <div>
+          <label class="block text-slate-600 font-medium mb-1">所屬天數 / 日期 *</label>
+          <select id="form-day-target" class="w-full px-3 py-2 rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-sky-500 bg-white font-medium text-slate-800">
+            <!-- 由 JS 動態填入 Day 1 ~ Day 7 -->
+          </select>
+        </div>
+
         <div class="grid grid-cols-2 gap-3">
           <div>
             <label class="block text-slate-600 font-medium mb-1">開始時間</label>
@@ -1452,6 +1460,10 @@
     function openAddModal() {
       document.getElementById("modal-title").textContent = `新增 Day ${itineraryData[currentDayIndex].day} 行程`;
       document.getElementById("form-item-id").value = "";
+      
+      // 更新天數下拉選單
+      populateDaySelect(currentDayIndex);
+
       document.getElementById("form-time").value = "";
       document.getElementById("form-category").value = "sightseeing";
       document.getElementById("form-title").value = "";
@@ -1471,6 +1483,10 @@
 
       document.getElementById("modal-title").textContent = `編輯行程項目`;
       document.getElementById("form-item-id").value = item.id;
+      
+      // 更新天數下拉選單，並選取當前所屬天數
+      populateDaySelect(currentDayIndex);
+
       document.getElementById("form-time").value = item.time || "";
       document.getElementById("form-category").value = item.category || "other";
       document.getElementById("form-title").value = item.title || "";
@@ -1487,13 +1503,29 @@
       modal.classList.add("hidden");
     }
 
+    // 填充電腦與手機的天數下拉選單
+    function populateDaySelect(selectedDayIndex) {
+      const selectEl = document.getElementById("form-day-target");
+      selectEl.innerHTML = "";
+      itineraryData.forEach((dayData, idx) => {
+        const opt = document.createElement("option");
+        opt.value = idx;
+        opt.textContent = `Day ${dayData.day} (${dayData.date} ${dayData.dayOfWeek})`;
+        if (idx === selectedDayIndex) {
+          opt.selected = true;
+        }
+        selectEl.appendChild(opt);
+      });
+    }
+
     document.getElementById("btn-modal-close").addEventListener("click", closeModal);
     document.getElementById("btn-modal-cancel").addEventListener("click", closeModal);
 
     // Save Form (Add or Edit)
     itemForm.addEventListener("submit", (e) => {
       e.preventDefault();
-      const currentDay = itineraryData[currentDayIndex];
+      const originDayIndex = currentDayIndex;
+      const targetDayIndex = parseInt(document.getElementById("form-day-target").value, 10);
       const itemId = document.getElementById("form-item-id").value;
       const latVal = parseFloat(document.getElementById("form-lat").value);
       const lngVal = parseFloat(document.getElementById("form-lng").value);
@@ -1510,18 +1542,33 @@
       };
 
       if (itemId) {
-        // Edit existing
-        const idx = currentDay.items.findIndex(i => i.id === itemId);
-        if (idx !== -1) {
-          currentDay.items[idx] = { ...currentDay.items[idx], ...newItemData };
+        // 編輯既有項目
+        const originDay = itineraryData[originDayIndex];
+        const existingIdx = originDay.items.findIndex(i => i.id === itemId);
+        const originalItem = existingIdx !== -1 ? originDay.items[existingIdx] : null;
+
+        if (originalItem) {
+          const updatedItem = { ...originalItem, ...newItemData };
+
+          if (originDayIndex === targetDayIndex) {
+            // 同一天內修改
+            originDay.items[existingIdx] = updatedItem;
+          } else {
+            // 跨天移動：從原天數移除，移入目標天數
+            originDay.items.splice(existingIdx, 1);
+            itineraryData[targetDayIndex].items.push(updatedItem);
+            currentDayIndex = targetDayIndex; // 切換畫面至新天數
+            showToast(`已成功將行程移動至 Day ${itineraryData[targetDayIndex].day}`);
+          }
         }
       } else {
-        // Add new
-        currentDay.items.push({
+        // 新增項目至所選天數
+        itineraryData[targetDayIndex].items.push({
           id: `item-${Date.now()}`,
           completed: false,
           ...newItemData
         });
+        currentDayIndex = targetDayIndex;
       }
 
       saveState();
